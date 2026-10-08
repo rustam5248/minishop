@@ -1,0 +1,12 @@
+/Users/rustamyusupov/lab/minishop/order-service/src/main/java/com/minishop/order/OrderServiceApplication.java
+/Users/rustamyusupov/lab/minishop/order-service/src/main/java/com/minishop/order/api/CreateOrderRequest.java
+/Users/rustamyusupov/lab/minishop/order-service/src/main/java/com/minishop/order/api/OrderController.java
+/Users/rustamyusupov/lab/minishop/order-service/src/main/java/com/minishop/order/domain/Order.java
+/Users/rustamyusupov/lab/minishop/order-service/src/main/java/com/minishop/order/domain/OrderRepository.java
+/Users/rustamyusupov/lab/minishop/order-service/src/main/java/com/minishop/order/saga/OrderSagaOrchestrator.java
+/Users/rustamyusupov/lab/minishop/order-service/src/main/java/com/minishop/order/saga/SagaInstance.java
+/Users/rustamyusupov/lab/minishop/order-service/src/main/java/com/minishop/order/saga/SagaReplyListener.java
+/Users/rustamyusupov/lab/minishop/order-service/src/main/java/com/minishop/order/saga/SagaRepository.java
+/Users/rustamyusupov/lab/minishop/order-service/src/main/java/com/minishop/order/saga/SagaStatus.java
+/Users/rustamyusupov/lab/minishop/order-service/src/main/java/com/minishop/order/saga/SagaStep.java
+/Users/rustamyusupov/lab/minishop/order-service/src/main/java/com/minishop/order/saga/StuckSagaDetector.java

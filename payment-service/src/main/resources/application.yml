@@ -1,0 +1,66 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: payment-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/payment_db
+    username: minishop
+    password: minishop
+  kafka:
+    bootstrap-servers: localhost:29092
+    consumer:
+      group-id: payment-service
+      auto-offset-reset: earliest
+    producer:
+      acks: all
+    listener:
+      concurrency: 3
+
+minishop:
+  bank:
+    url: ${BANK_URL:http://localhost:8083}
+    connect-timeout-ms: 1000
+    read-timeout-ms: 2000      # never leave the default (infinite!) timeout on a remote call
+
+resilience4j:
+  retry:
+    instances:
+      bank:
+        max-attempts: 3                      # 1 call + 2 retries
+        wait-duration: 300ms
+        enable-exponential-backoff: true     # 300ms, 600ms, ...
+        exponential-backoff-multiplier: 2
+        enable-randomized-wait: true         # + jitter, avoids synchronized retry storms
+        randomized-wait-factor: 0.5
+        retry-exceptions:                    # only transient problems are retried
+          - org.springframework.web.client.ResourceAccessException    # timeouts, connection refused
+          - org.springframework.web.client.HttpServerErrorException   # 5xx
+  circuitbreaker:
+    instances:
+      bank:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50           # open when >= 50% of the last calls failed
+        slow-call-duration-threshold: 1500ms
+        slow-call-rate-threshold: 80         # ...or when 80% are slow
+        wait-duration-in-open-state: 15s
+        permitted-number-of-calls-in-half-open-state: 2
+        automatic-transition-from-open-to-half-open-enabled: true
+        ignore-exceptions:                   # a declined card is a business answer, not a bank failure
+          - com.minishop.payment.bank.PaymentDeclinedException
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,circuitbreakers
+  health:
+    circuitbreakers:
+      enabled: true
+
+logging:
+  pattern:
+    level: "%5p [%X{trace_id:-},%X{span_id:-}]"

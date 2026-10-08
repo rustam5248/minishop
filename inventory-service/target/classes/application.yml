@@ -1,0 +1,34 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: inventory-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/inventory_db
+    username: minishop
+    password: minishop
+  kafka:
+    bootstrap-servers: localhost:29092
+    consumer:
+      group-id: inventory-service
+      auto-offset-reset: earliest
+    producer:
+      acks: all
+    listener:
+      concurrency: 3
+
+minishop:
+  chaos:
+    # 0.0 - 1.0: probability that processing a command throws (for the DLQ / stuck-saga drills)
+    failure-rate: ${INVENTORY_FAILURE_RATE:0}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+logging:
+  pattern:
+    level: "%5p [%X{trace_id:-},%X{span_id:-}]"

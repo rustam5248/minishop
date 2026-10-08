@@ -1,0 +1,38 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: order-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/order_db
+    username: minishop
+    password: minishop
+  kafka:
+    bootstrap-servers: localhost:29092
+    consumer:
+      group-id: order-service
+      auto-offset-reset: earliest
+    producer:
+      acks: all
+    listener:
+      concurrency: 3   # = number of partitions
+
+minishop:
+  outbox:
+    poll-interval-ms: 500
+  saga:
+    stuck-check-interval-ms: 15000
+    stuck-after-seconds: 60
+    max-retries: 3
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+logging:
+  pattern:
+    # trace_id / span_id are put into the MDC by the OpenTelemetry agent
+    level: "%5p [%X{trace_id:-},%X{span_id:-}]"

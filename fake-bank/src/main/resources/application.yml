@@ -1,0 +1,14 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: fake-bank
+
+bank:
+  delay-ms: ${BANK_DELAY_MS:0}           # every call sleeps this long before answering
+  failure-rate: ${BANK_FAILURE_RATE:0}   # 0.0 - 1.0 probability of HTTP 503
+
+logging:
+  pattern:
+    level: "%5p [%X{trace_id:-},%X{span_id:-}]"

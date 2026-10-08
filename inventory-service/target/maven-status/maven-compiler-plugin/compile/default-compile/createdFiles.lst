@@ -1,0 +1,5 @@
+com/minishop/inventory/ChaosSettings.class
+com/minishop/inventory/InventoryServiceApplication.class
+com/minishop/inventory/InventoryService.class
+com/minishop/inventory/InventoryCommandListener.class
+com/minishop/inventory/InventoryController.class

@@ -1,0 +1,10 @@
+/Users/rustamyusupov/lab/minishop/common/src/main/java/com/minishop/common/messaging/IdempotencyGuard.java
+/Users/rustamyusupov/lab/minishop/common/src/main/java/com/minishop/common/messaging/InboundMessage.java
+/Users/rustamyusupov/lab/minishop/common/src/main/java/com/minishop/common/messaging/InvalidMessageException.java
+/Users/rustamyusupov/lab/minishop/common/src/main/java/com/minishop/common/messaging/MessageHeaderNames.java
+/Users/rustamyusupov/lab/minishop/common/src/main/java/com/minishop/common/messaging/Messages.java
+/Users/rustamyusupov/lab/minishop/common/src/main/java/com/minishop/common/messaging/MessagingConfig.java
+/Users/rustamyusupov/lab/minishop/common/src/main/java/com/minishop/common/messaging/OutboxRelay.java
+/Users/rustamyusupov/lab/minishop/common/src/main/java/com/minishop/common/messaging/OutboxWriter.java
+/Users/rustamyusupov/lab/minishop/common/src/main/java/com/minishop/common/messaging/Topics.java
+/Users/rustamyusupov/lab/minishop/common/src/main/java/com/minishop/common/tracing/TraceContext.java

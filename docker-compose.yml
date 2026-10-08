@@ -1,0 +1,124 @@
+name: minishop
+
+x-app-env: &app-env
+  SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+  SPRING_DATASOURCE_USERNAME: minishop
+  SPRING_DATASOURCE_PASSWORD: minishop
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+  OTEL_TRACES_SAMPLER: parentbased_always_on
+  OTEL_METRICS_EXPORTER: none
+  OTEL_LOGS_EXPORTER: none
+  # The outbox relay and saga detector are @Scheduled; we trace their real work manually instead.
+  OTEL_INSTRUMENTATION_SPRING_SCHEDULING_ENABLED: "false"
+
+x-app-deps: &app-deps
+  postgres:
+    condition: service_healthy
+  kafka:
+    condition: service_healthy
+  otel-collector:
+    condition: service_started
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: minishop
+      POSTGRES_PASSWORD: minishop
+      POSTGRES_DB: minishop
+    ports: ["5432:5432"]
+    volumes:
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U minishop"]
+      interval: 5s
+      retries: 10
+
+  kafka:
+    image: apache/kafka:3.8.1
+    ports: ["29092:29092"]
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_NUM_PARTITIONS: 3
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1"]
+      interval: 10s
+      retries: 10
+      start_period: 15s
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    ports: ["8090:8080"]
+    environment:
+      KAFKA_CLUSTERS_0_NAME: minishop
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    depends_on:
+      kafka:
+        condition: service_healthy
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.116.1
+    volumes:
+      - ./infra/otel-collector.yaml:/etc/otelcol-contrib/config.yaml:ro
+    ports: ["4317:4317", "4318:4318"]
+    depends_on: [jaeger]
+
+  jaeger:
+    image: jaegertracing/jaeger:2.5.0
+    ports: ["16686:16686"]
+
+  order-service:
+    build: ./order-service
+    ports: ["8080:8080"]
+    environment:
+      <<: *app-env
+      OTEL_SERVICE_NAME: order-service
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/order_db
+    depends_on: *app-deps
+
+  inventory-service:
+    build: ./inventory-service
+    ports: ["8081:8081"]
+    environment:
+      <<: *app-env
+      OTEL_SERVICE_NAME: inventory-service
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/inventory_db
+      INVENTORY_FAILURE_RATE: "0"
+    depends_on: *app-deps
+
+  payment-service:
+    build: ./payment-service
+    ports: ["8082:8082"]
+    environment:
+      <<: *app-env
+      OTEL_SERVICE_NAME: payment-service
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/payment_db
+      BANK_URL: http://fake-bank:8083
+    depends_on:
+      <<: *app-deps
+      fake-bank:
+        condition: service_started
+
+  fake-bank:
+    build: ./fake-bank
+    ports: ["8083:8083"]
+    environment:
+      OTEL_SERVICE_NAME: fake-bank
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_METRICS_EXPORTER: none
+      OTEL_LOGS_EXPORTER: none
+      BANK_DELAY_MS: "0"
+      BANK_FAILURE_RATE: "0"
+    depends_on:
+      otel-collector:
+        condition: service_started
